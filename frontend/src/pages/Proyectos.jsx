@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 const Proyectos = () => {
   const [proyectos, setProyectos] = useState([]);
@@ -8,6 +9,8 @@ const Proyectos = () => {
   const [form, setForm] = useState({ nombre: '', descripcion: '', fecha_inicio: '', fecha_fin: '', estado: 'pendiente', cliente_id: '' });
   const [editando, setEditando] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === 'admin';
 
   const cargarDatos = async () => {
     const [p, c] = await Promise.all([api.get('/proyectos'), api.get('/clientes')]);
@@ -49,20 +52,33 @@ const Proyectos = () => {
     return 'bg-gray-100 text-gray-700';
   };
 
+  // Usuarios solo ven proyectos donde tienen tareas asignadas
+  const proyectosFiltrados = esAdmin
+    ? proyectos
+    : proyectos.filter(p => p.tieneAsignacion);
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Proyectos</h2>
-          <button
-            onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', descripcion: '', fecha_inicio: '', fecha_fin: '', estado: 'pendiente', cliente_id: '' }); }}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            + Nuevo Proyecto
-          </button>
+          {esAdmin && (
+            <button
+              onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', descripcion: '', fecha_inicio: '', fecha_fin: '', estado: 'pendiente', cliente_id: '' }); }}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+              + Nuevo Proyecto
+            </button>
+          )}
         </div>
 
-        {mostrarForm && (
+        {!esAdmin && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6 text-blue-700 text-sm">
+            Estás viendo los proyectos donde tienes tareas asignadas.
+          </div>
+        )}
+
+        {esAdmin && mostrarForm && (
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input required placeholder="Nombre del proyecto" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} className="border rounded-lg px-4 py-2" />
             <select value={form.cliente_id} onChange={e => setForm({...form, cliente_id: e.target.value})} className="border rounded-lg px-4 py-2">
@@ -92,7 +108,7 @@ const Proyectos = () => {
                 <th className="p-3 text-left">Fecha inicio</th>
                 <th className="p-3 text-left">Fecha fin</th>
                 <th className="p-3 text-left">Estado</th>
-                <th className="p-3 text-left">Acciones</th>
+                {esAdmin && <th className="p-3 text-left">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -107,10 +123,12 @@ const Proyectos = () => {
                       {p.estado}
                     </span>
                   </td>
-                  <td className="p-3 flex gap-2">
-                    <button onClick={() => handleEditar(p)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
-                    <button onClick={() => handleEliminar(p.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
-                  </td>
+                  {esAdmin && (
+                    <td className="p-3 flex gap-2">
+                      <button onClick={() => handleEditar(p)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
+                      <button onClick={() => handleEliminar(p.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {proyectos.length === 0 && (

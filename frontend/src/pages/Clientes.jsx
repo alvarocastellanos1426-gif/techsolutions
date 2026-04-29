@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 const Clientes = () => {
   const [clientes, setClientes] = useState([]);
   const [form, setForm] = useState({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' });
   const [editando, setEditando] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === 'admin';
 
   const cargarClientes = async () => {
     const res = await api.get('/clientes');
@@ -47,14 +50,16 @@ const Clientes = () => {
       <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Clientes</h2>
-          <button
-            onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' }); }}
-            className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">
-            + Nuevo Cliente
-          </button>
+          {esAdmin && (
+            <button
+              onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' }); }}
+              className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">
+              + Nuevo Cliente
+            </button>
+          )}
         </div>
 
-        {mostrarForm && (
+        {esAdmin && mostrarForm && (
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input required placeholder="Nombre" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} className="border rounded-lg px-4 py-2" />
             <input placeholder="Correo" value={form.correo} onChange={e => setForm({...form, correo: e.target.value})} className="border rounded-lg px-4 py-2" />
@@ -79,7 +84,7 @@ const Clientes = () => {
                 <th className="p-3 text-left">Teléfono</th>
                 <th className="p-3 text-left">Empresa</th>
                 <th className="p-3 text-left">Estado</th>
-                <th className="p-3 text-left">Acciones</th>
+                {esAdmin && <th className="p-3 text-left">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -94,10 +99,12 @@ const Clientes = () => {
                       {c.estado}
                     </span>
                   </td>
-                  <td className="p-3 flex gap-2">
-                    <button onClick={() => handleEditar(c)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
-                    <button onClick={() => handleEliminar(c.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
-                  </td>
+                  {esAdmin && (
+                    <td className="p-3 flex gap-2">
+                      <button onClick={() => handleEditar(c)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
+                      <button onClick={() => handleEliminar(c.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {clientes.length === 0 && (

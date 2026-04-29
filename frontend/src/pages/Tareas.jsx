@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
-  const [form, setForm] = useState({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '' });
+  const [usuarios, setUsuarios] = useState([]);
+  const [form, setForm] = useState({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '', usuario_id: '' });
   const [editando, setEditando] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === 'admin';
 
   const cargarDatos = async () => {
     const [t, p] = await Promise.all([api.get('/tareas'), api.get('/proyectos')]);
-    setTareas(t.data);
+    const todasTareas = t.data;
+    // Usuarios solo ven sus tareas asignadas
+    const tareasFiltradas = esAdmin
+      ? todasTareas
+      : todasTareas.filter(t => t.usuario_id === usuario.id);
+    setTareas(tareasFiltradas);
     setProyectos(p.data);
   };
 
@@ -24,7 +33,7 @@ const Tareas = () => {
     } else {
       await api.post('/tareas', form);
     }
-    setForm({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '' });
+    setForm({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '', usuario_id: '' });
     setEditando(null);
     setMostrarForm(false);
     cargarDatos();
@@ -61,14 +70,22 @@ const Tareas = () => {
       <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Tareas</h2>
-          <button
-            onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '' }); }}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-            + Nueva Tarea
-          </button>
+          {esAdmin && (
+            <button
+              onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '', usuario_id: '' }); }}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+              + Nueva Tarea
+            </button>
+          )}
         </div>
 
-        {mostrarForm && (
+        {!esAdmin && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6 text-blue-700 text-sm">
+            Estás viendo las tareas asignadas a ti.
+          </div>
+        )}
+
+        {esAdmin && mostrarForm && (
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input required placeholder="Nombre de la tarea" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} className="border rounded-lg px-4 py-2" />
             <input placeholder="Responsable" value={form.responsable} onChange={e => setForm({...form, responsable: e.target.value})} className="border rounded-lg px-4 py-2" />
@@ -86,7 +103,8 @@ const Tareas = () => {
               <option value="en progreso">En progreso</option>
               <option value="completado">Completado</option>
             </select>
-            <button type="submit" className="bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700">
+            <input placeholder="ID del usuario asignado (opcional)" value={form.usuario_id} onChange={e => setForm({...form, usuario_id: e.target.value})} className="border rounded-lg px-4 py-2" />
+            <button type="submit" className="bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700 md:col-span-2">
               {editando ? 'Actualizar' : 'Guardar'}
             </button>
           </form>
@@ -101,7 +119,7 @@ const Tareas = () => {
                 <th className="p-3 text-left">Proyecto</th>
                 <th className="p-3 text-left">Prioridad</th>
                 <th className="p-3 text-left">Estado</th>
-                <th className="p-3 text-left">Acciones</th>
+                {esAdmin && <th className="p-3 text-left">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -120,10 +138,12 @@ const Tareas = () => {
                       {t.estado}
                     </span>
                   </td>
-                  <td className="p-3 flex gap-2">
-                    <button onClick={() => handleEditar(t)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
-                    <button onClick={() => handleEliminar(t.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
-                  </td>
+                  {esAdmin && (
+                    <td className="p-3 flex gap-2">
+                      <button onClick={() => handleEditar(t)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
+                      <button onClick={() => handleEliminar(t.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {tareas.length === 0 && (

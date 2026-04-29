@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -49,6 +49,12 @@ const Login = () => {
             className="bg-blue-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-800 transition">
             Iniciar sesión
           </button>
+          <p className="text-center text-sm text-gray-500 mt-2">
+            ¿No tienes cuenta?{' '}
+            <Link to="/registro" className="text-blue-700 font-semibold hover:underline">
+              Regístrate
+            </Link>
+          </p>
         </form>
       </div>
     </div>
