@@ -12,7 +12,11 @@ const Login = () => {
     try {
       const res = await api.post('/auth/login', data);
       login(res.data.token, res.data.usuario);
-      navigate('/dashboard');
+      if (res.data.usuario.rol === 'cliente') {
+        navigate('/cliente');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       alert('Correo o contraseña incorrectos');
     }

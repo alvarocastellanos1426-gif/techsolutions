@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [trabajadores, setTrabajadores] = useState([]);
   const [form, setForm] = useState({ nombre: '', responsable: '', prioridad: 'media', estado: 'pendiente', proyecto_id: '', usuario_id: '' });
   const [editando, setEditando] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -16,12 +16,16 @@ const Tareas = () => {
   const cargarDatos = async () => {
     const [t, p] = await Promise.all([api.get('/tareas'), api.get('/proyectos')]);
     const todasTareas = t.data;
-    // Usuarios solo ven sus tareas asignadas
     const tareasFiltradas = esAdmin
       ? todasTareas
       : todasTareas.filter(t => t.usuario_id === usuario.id);
     setTareas(tareasFiltradas);
     setProyectos(p.data);
+
+    if (esAdmin) {
+      const trabajadoresRes = await api.get('/auth/trabajadores');
+      setTrabajadores(trabajadoresRes.data);
+    }
   };
 
   useEffect(() => { cargarDatos(); }, []);
@@ -50,6 +54,16 @@ const Tareas = () => {
       await api.delete(`/tareas/${id}`);
       cargarDatos();
     }
+  };
+
+  const handleTrabajadorChange = (e) => {
+    const trabajadorId = e.target.value;
+    const trabajador = trabajadores.find(t => t.id === trabajadorId);
+    setForm({
+      ...form,
+      usuario_id: trabajadorId,
+      responsable: trabajador ? trabajador.nombre : ''
+    });
   };
 
   const colorPrioridad = (prioridad) => {
@@ -88,28 +102,36 @@ const Tareas = () => {
         {esAdmin && mostrarForm && (
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input required placeholder="Nombre de la tarea" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} className="border rounded-lg px-4 py-2" />
-            <input placeholder="Responsable" value={form.responsable} onChange={e => setForm({...form, responsable: e.target.value})} className="border rounded-lg px-4 py-2" />
+            
+            <select value={form.usuario_id} onChange={handleTrabajadorChange} className="border rounded-lg px-4 py-2">
+              <option value="">Seleccionar trabajador</option>
+              {trabajadores.map(t => <option key={t.id} value={t.id}>{t.nombre} — {t.correo}</option>)}
+            </select>
+
             <select value={form.proyecto_id} onChange={e => setForm({...form, proyecto_id: e.target.value})} className="border rounded-lg px-4 py-2">
               <option value="">Seleccionar proyecto</option>
               {proyectos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
+
             <select value={form.prioridad} onChange={e => setForm({...form, prioridad: e.target.value})} className="border rounded-lg px-4 py-2">
               <option value="alta">Alta</option>
               <option value="media">Media</option>
               <option value="baja">Baja</option>
             </select>
+
             <select value={form.estado} onChange={e => setForm({...form, estado: e.target.value})} className="border rounded-lg px-4 py-2">
               <option value="pendiente">Pendiente</option>
               <option value="en progreso">En progreso</option>
               <option value="completado">Completado</option>
             </select>
-            <input placeholder="ID del usuario asignado (opcional)" value={form.usuario_id} onChange={e => setForm({...form, usuario_id: e.target.value})} className="border rounded-lg px-4 py-2" />
-            <button type="submit" className="bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700 md:col-span-2">
+
+            <button type="submit" className="bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700">
               {editando ? 'Actualizar' : 'Guardar'}
             </button>
           </form>
         )}
 
+        {/* Trabajador puede actualizar estado de sus tareas */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-purple-600 text-white">
@@ -119,14 +141,14 @@ const Tareas = () => {
                 <th className="p-3 text-left">Proyecto</th>
                 <th className="p-3 text-left">Prioridad</th>
                 <th className="p-3 text-left">Estado</th>
-                {esAdmin && <th className="p-3 text-left">Acciones</th>}
+                <th className="p-3 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {tareas.map(t => (
                 <tr key={t.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{t.nombre}</td>
-                  <td className="p-3">{t.responsable}</td>
+                  <td className="p-3">{t.responsable || '-'}</td>
                   <td className="p-3">{t.proyectos?.nombre || '-'}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorPrioridad(t.prioridad)}`}>
@@ -134,16 +156,32 @@ const Tareas = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorEstado(t.estado)}`}>
-                      {t.estado}
-                    </span>
+                    {!esAdmin ? (
+                      <select
+                        value={t.estado}
+                        onChange={async (e) => {
+                          await api.put(`/tareas/${t.id}`, { ...t, estado: e.target.value });
+                          cargarDatos();
+                        }}
+                        className="border rounded-lg px-2 py-1 text-xs">
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en progreso">En progreso</option>
+                        <option value="completado">Completado</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorEstado(t.estado)}`}>
+                        {t.estado}
+                      </span>
+                    )}
                   </td>
-                  {esAdmin && (
-                    <td className="p-3 flex gap-2">
-                      <button onClick={() => handleEditar(t)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
-                      <button onClick={() => handleEliminar(t.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
-                    </td>
-                  )}
+                  <td className="p-3 flex gap-2">
+                    {esAdmin && (
+                      <>
+                        <button onClick={() => handleEditar(t)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
+                        <button onClick={() => handleEliminar(t.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
               {tareas.length === 0 && (

@@ -7,6 +7,7 @@ const Clientes = () => {
   const [clientes, setClientes] = useState([]);
   const [form, setForm] = useState({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' });
   const [editando, setEditando] = useState(null);
+  const [editandoEsUsuario, setEditandoEsUsuario] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
   const { usuario } = useAuth();
   const esAdmin = usuario?.rol === 'admin';
@@ -20,26 +21,47 @@ const Clientes = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editando) {
-      await api.put(`/clientes/${editando}`, form);
-    } else {
-      await api.post('/clientes', form);
+    try {
+      if (editando) {
+        if (editandoEsUsuario) {
+          await api.put(`/clientes/usuario/${editando}`, form);
+        } else {
+          await api.put(`/clientes/${editando}`, form);
+        }
+      } else {
+        await api.post('/clientes', form);
+      }
+      setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' });
+      setEditando(null);
+      setEditandoEsUsuario(false);
+      setMostrarForm(false);
+      cargarClientes();
+    } catch (err) {
+      alert('Error al guardar');
     }
-    setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' });
-    setEditando(null);
-    setMostrarForm(false);
-    cargarClientes();
   };
 
   const handleEditar = (cliente) => {
-    setForm(cliente);
+    setForm({
+      nombre: cliente.nombre || '',
+      correo: cliente.correo || '',
+      telefono: cliente.telefono !== '-' ? cliente.telefono || '' : '',
+      empresa: cliente.empresa !== 'Cliente registrado' ? cliente.empresa || '' : '',
+      estado: cliente.estado || 'activo'
+    });
     setEditando(cliente.id);
+    setEditandoEsUsuario(cliente.es_usuario || false);
     setMostrarForm(true);
   };
 
-  const handleEliminar = async (id) => {
+  const handleEliminar = async (id, esUsuario) => {
     if (confirm('¿Eliminar este cliente?')) {
-      await api.delete(`/clientes/${id}`);
+      if (!esUsuario) {
+        await api.delete(`/clientes/${id}`);
+      } else {
+        alert('Este cliente tiene cuenta de usuario, elimínalo desde la base de datos.');
+        return;
+      }
       cargarClientes();
     }
   };
@@ -52,7 +74,7 @@ const Clientes = () => {
           <h2 className="text-2xl font-bold text-gray-800">Clientes</h2>
           {esAdmin && (
             <button
-              onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' }); }}
+              onClick={() => { setMostrarForm(!mostrarForm); setEditando(null); setEditandoEsUsuario(false); setForm({ nombre: '', correo: '', telefono: '', empresa: '', estado: 'activo' }); }}
               className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">
               + Nuevo Cliente
             </button>
@@ -90,7 +112,10 @@ const Clientes = () => {
             <tbody>
               {clientes.map(c => (
                 <tr key={c.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{c.nombre}</td>
+                  <td className="p-3">
+                    {c.nombre}
+                    {c.es_usuario && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Portal</span>}
+                  </td>
                   <td className="p-3">{c.correo}</td>
                   <td className="p-3">{c.telefono}</td>
                   <td className="p-3">{c.empresa}</td>
@@ -102,7 +127,9 @@ const Clientes = () => {
                   {esAdmin && (
                     <td className="p-3 flex gap-2">
                       <button onClick={() => handleEditar(c)} className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
-                      <button onClick={() => handleEliminar(c.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                      {!c.es_usuario && (
+                        <button onClick={() => handleEliminar(c.id, c.es_usuario)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+                      )}
                     </td>
                   )}
                 </tr>

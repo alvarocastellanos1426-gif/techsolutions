@@ -15,6 +15,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/proyectos', require('./routes/proyectos'));
 app.use('/api/tareas', require('./routes/tareas'));
+app.use('/api/solicitudes', require('./routes/solicitudes'));
 
 // Ruta de prueba
 app.get('/', (req, res) => {

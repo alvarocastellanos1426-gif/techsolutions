@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const supabase = require('../supabase');
+const verificarToken = require('../middleware/auth');
 
 // Registro
 router.post('/registro', async (req, res) => {
@@ -11,7 +12,7 @@ router.post('/registro', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase
       .from('usuarios')
-      .insert([{ nombre, correo, password: hash, rol: rol || 'usuario' }])
+      .insert([{ nombre, correo, password: hash, rol: rol || 'trabajador' }])
       .select();
     if (error) return res.status(400).json({ error: error.message });
     res.json({ mensaje: 'Usuario registrado correctamente', usuario: data[0] });
@@ -41,6 +42,16 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Error del servidor' });
   }
+});
+
+// Obtener lista de trabajadores
+router.get('/trabajadores', verificarToken, async (req, res) => {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nombre, correo')
+    .eq('rol', 'trabajador');
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
 });
 
 module.exports = router;

@@ -20,8 +20,9 @@ const Proyectos = () => {
 
   useEffect(() => { cargarDatos(); }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
     if (editando) {
       await api.put(`/proyectos/${editando}`, form);
     } else {
@@ -31,13 +32,23 @@ const Proyectos = () => {
     setEditando(null);
     setMostrarForm(false);
     cargarDatos();
-  };
+  } catch (err) {
+    alert('Error al guardar el proyecto');
+  }
+};
 
   const handleEditar = (proyecto) => {
-    setForm(proyecto);
-    setEditando(proyecto.id);
-    setMostrarForm(true);
-  };
+  setForm({
+    nombre: proyecto.nombre || '',
+    descripcion: proyecto.descripcion || '',
+    fecha_inicio: proyecto.fecha_inicio || '',
+    fecha_fin: proyecto.fecha_fin || '',
+    estado: proyecto.estado || 'pendiente',
+    cliente_id: proyecto.cliente_id || ''
+  });
+  setEditando(proyecto.id);
+  setMostrarForm(true);
+};
 
   const handleEliminar = async (id) => {
     if (confirm('¿Eliminar este proyecto?')) {

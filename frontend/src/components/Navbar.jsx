@@ -10,6 +10,8 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const esAdmin = usuario?.rol === 'admin';
+
   return (
     <nav className="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow-md">
       <span className="text-xl font-bold">TechSolutions</span>
@@ -18,6 +20,8 @@ const Navbar = () => {
         <Link to="/clientes" className="hover:underline">Clientes</Link>
         <Link to="/proyectos" className="hover:underline">Proyectos</Link>
         <Link to="/tareas" className="hover:underline">Tareas</Link>
+        {esAdmin && <Link to="/solicitudes" className="hover:underline">Solicitudes</Link>}
+        {esAdmin && <Link to="/graficas" className="hover:underline">Gráficas</Link>}
         <span className="text-sm opacity-80">Hola, {usuario?.nombre}</span>
         <button
           onClick={handleLogout}

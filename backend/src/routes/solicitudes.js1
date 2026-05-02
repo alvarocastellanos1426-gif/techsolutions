@@ -1,0 +1,47 @@
+const express = require('express');
+const router = express.Router();
+const supabase = require('../supabase');
+const verificarToken = require('../middleware/auth');
+
+// Cliente crea una solicitud
+router.post('/', verificarToken, async (req, res) => {
+  const { titulo, descripcion } = req.body;
+  const cliente_id = req.usuario.id;
+  const { data, error } = await supabase
+    .from('solicitudes_proyectos')
+    .insert([{ titulo, descripcion, cliente_id }])
+    .select();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ mensaje: 'Solicitud enviada correctamente', solicitud: data[0] });
+});
+
+// Listar solicitudes (admin ve todas, cliente ve las suyas)
+router.get('/', verificarToken, async (req, res) => {
+  let query = supabase
+    .from('solicitudes_proyectos')
+    .select('*, usuarios(nombre, correo)');
+  if (req.usuario.rol === 'cliente') {
+    query = query.eq('cliente_id', req.usuario.id);
+  }
+  const { data, error } = await query.order('creado_en', { ascending: false });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Admin aprueba o rechaza solicitud
+router.put('/:id', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({ error: 'No autorizado' });
+  }
+  const { id } = req.params;
+  const { estado, proyecto_id } = req.body;
+  const { data, error } = await supabase
+    .from('solicitudes_proyectos')
+    .update({ estado, proyecto_id })
+    .eq('id', id)
+    .select();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ mensaje: 'Solicitud actualizada', solicitud: data[0] });
+});
+
+module.exports = router;
