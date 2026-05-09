@@ -18,7 +18,11 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      alert('Correo o contraseña incorrectos');
+    if (err.response?.status === 403) {
+    alert('Tu cuenta está pendiente de aprobación por el administrador.');
+         } else {
+    alert('Correo o contraseña incorrectos');
+        }
     }
   };
 

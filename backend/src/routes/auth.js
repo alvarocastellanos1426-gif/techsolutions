@@ -32,6 +32,10 @@ router.post('/login', async (req, res) => {
       .single();
     if (error || !data) return res.status(400).json({ error: 'Usuario no encontrado' });
     const valido = await bcrypt.compare(password, data.password);
+    // Verificar si el trabajador está aprobado
+    if (data.rol === 'trabajador' && !data.aprobado) {
+    return res.status(403).json({ error: 'Tu cuenta está pendiente de aprobación por el administrador.' });
+    }
     if (!valido) return res.status(400).json({ error: 'Contraseña incorrecta' });
     const token = jwt.sign(
       { id: data.id, correo: data.correo, rol: data.rol },
@@ -52,6 +56,32 @@ router.get('/trabajadores', verificarToken, async (req, res) => {
     .eq('rol', 'trabajador');
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
+});
+
+// Listar usuarios pendientes de aprobación
+router.get('/pendientes', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nombre, correo, rol, aprobado, creado_en')
+    .eq('rol', 'trabajador')
+    .eq('aprobado', false);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Aprobar o rechazar usuario
+router.put('/aprobar/:id', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+  const { id } = req.params;
+  const { aprobado } = req.body;
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update({ aprobado })
+    .eq('id', id)
+    .select();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ mensaje: aprobado ? 'Usuario aprobado' : 'Usuario rechazado', usuario: data[0] });
 });
 
 module.exports = router;

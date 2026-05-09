@@ -11,6 +11,8 @@ import Solicitudes from './pages/Solicitudes';
 import GraficasTareas from './pages/GraficasTareas';
 import ClienteDashboard from './pages/ClienteDashboard';
 import ClienteProyecto from './pages/ClienteProyecto';
+import Reportes from './pages/Reportes';
+import Usuarios from './pages/Usuarios';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
           <Route path="/cliente" element={<ProtectedRoute roles={['cliente']}><ClienteDashboard /></ProtectedRoute>} />
           <Route path="/cliente/proyecto/:id" element={<ProtectedRoute roles={['cliente']}><ClienteProyecto /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="/reportes" element={<ProtectedRoute roles={['admin','trabajador']}><Reportes /></ProtectedRoute>} />
+          <Route path="/usuarios" element={<ProtectedRoute roles={['admin']}><Usuarios /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

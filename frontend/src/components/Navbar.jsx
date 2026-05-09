@@ -20,8 +20,12 @@ const Navbar = () => {
         <Link to="/clientes" className="hover:underline">Clientes</Link>
         <Link to="/proyectos" className="hover:underline">Proyectos</Link>
         <Link to="/tareas" className="hover:underline">Tareas</Link>
+        {(esAdmin || usuario?.rol === 'trabajador') && (
+  <Link to="/reportes" className="hover:underline">Reportes</Link>
+)}
         {esAdmin && <Link to="/solicitudes" className="hover:underline">Solicitudes</Link>}
         {esAdmin && <Link to="/graficas" className="hover:underline">Gráficas</Link>}
+        {esAdmin && <Link to="/usuarios" className="hover:underline">Usuarios</Link>}
         <span className="text-sm opacity-80">Hola, {usuario?.nombre}</span>
         <button
           onClick={handleLogout}
