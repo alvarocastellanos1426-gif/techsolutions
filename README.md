@@ -2,16 +2,16 @@
 
 Sistema web full-stack para la gestión de clientes, proyectos y tareas de la empresa TechSolutions S.A.
 
-## 🌐 URLs del Sistema
+##  URLs del Sistema
 
 - **Frontend:** https://techsolutions-frontend.vercel.app
 - **Backend:** https://techsolutions-jsrv.onrender.com
 
-## 📋 Descripción
+##  Descripción
 
 Sistema web empresarial que permite centralizar la información, automatizar procesos básicos y mejorar la toma de decisiones de la empresa TechSolutions S.A.
 
-## ✅ Funcionalidades
+##  Funcionalidades
 
 - Autenticación de usuarios con JWT
 - Roles: Administrador y Usuario
@@ -20,7 +20,7 @@ Sistema web empresarial que permite centralizar la información, automatizar pro
 - Gestión completa de Tareas (CRUD)
 - Interfaz responsiva y moderna
 
-## 🛠️ Tecnologías Utilizadas
+##  Tecnologías Utilizadas
 
 ### Frontend
 - React 18
@@ -44,7 +44,7 @@ Sistema web empresarial que permite centralizar la información, automatizar pro
 - Frontend: Vercel
 - Backend: Render
 
-## 🚀 Instalación Local
+##  Instalación Local
 
 ### Requisitos previos
 - Node.js v18 o superior
@@ -87,7 +87,7 @@ npm install
 npm run dev
 ```
 
-## 🗄️ Estructura de la Base de Datos
+##  Estructura de la Base de Datos
 
 ### Tabla: usuarios
 | Campo | Tipo | Descripción |
@@ -129,7 +129,7 @@ npm run dev
 | estado | VARCHAR | pendiente / en progreso / completado |
 | proyecto_id | UUID | Referencia al proyecto |
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 techsolutions/
@@ -163,13 +163,13 @@ techsolutions/
     └── package.json
 ```
 
-## 🔐 Credenciales de Prueba
+##  Credenciales de Prueba
 
 - **Correo:** admin@techsolutions.com
 - **Contraseña:** admin123
 - **Rol:** Administrador
 
-## 📡 Endpoints de la API
+##  Endpoints de la API
 
 ### Autenticación
 | Método | Endpoint | Descripción |
@@ -201,6 +201,6 @@ techsolutions/
 | PUT | /api/tareas/:id | Editar tarea |
 | DELETE | /api/tareas/:id | Eliminar tarea |
 
-## 👨‍💻 Autor
+##  Autor
 
 Alvaro Jose Castellanos de la Cruz
