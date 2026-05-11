@@ -60,4 +60,26 @@ router.delete('/:id', verificarToken, async (req, res) => {
   res.json({ mensaje: 'Proyecto eliminado' });
 });
 
+// Obtener proyecto con tareas para el cliente
+router.get('/:id/detalle', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data: proyecto, error } = await supabase
+      .from('proyectos')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+
+    const { data: tareas } = await supabase
+      .from('tareas')
+      .select('*')
+      .eq('proyecto_id', id);
+
+    res.json({ ...proyecto, tareas: tareas || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 module.exports = router;
